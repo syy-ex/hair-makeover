@@ -6,16 +6,21 @@ type RouteHandler<T = unknown> = (
   apiKey: string
 ) => Promise<NextResponse>;
 
+type ApiAuthOptions = {
+  envKey?: string;
+};
+
 export function withApiAuth<T>(
-  handler: RouteHandler<T>
+  handler: RouteHandler<T>,
+  options: ApiAuthOptions = {}
 ): (req: NextRequest, context: T) => Promise<NextResponse> {
   return async function (req: NextRequest, context: T): Promise<NextResponse> {
-    // Get API key from environment variable
-    const apiKey = process.env.RUNWAY_API_KEY;
+    const envKey = options.envKey ?? 'RUNWAY_API_KEY';
+    const apiKey = process.env[envKey];
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'RUNWAY_API_KEY environment variable is not set' },
+        { error: `${envKey} environment variable is not set` },
         { status: 500 }
       );
     }

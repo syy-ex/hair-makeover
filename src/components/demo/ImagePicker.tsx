@@ -20,23 +20,17 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
 
   const handleSelectPreset = async (imagePath: string, index: number) => {
     try {
-      // Fetch the image file
       const response = await fetch(imagePath);
 
       if (!response.ok) {
-        throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);
+        throw new Error(`加载示例图片失败: ${response.status} ${response.statusText}`);
       }
 
-      // Get the image data as a blob
       const imageBlob = await response.blob();
-
-      // Create a File object from the blob
       const file = new File([imageBlob], `demo-${index + 1}.jpg`, { type: 'image/jpeg' });
-
-      // Call the callback with the file
       onImageSelected(file);
     } catch (error) {
-      console.error('Error selecting preset image:', error);
+      console.error('选择示例图片失败:', error);
     }
   };
 
@@ -52,10 +46,10 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
           }
         })
         .catch(err => {
-          console.error('Error accessing camera:', err);
+          console.error('访问摄像头失败:', err);
         });
     } else {
-      alert('Camera access is not supported in your browser');
+      alert('你的浏览器不支持相机访问');
     }
   };
 
@@ -68,7 +62,6 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
     const ctx = canvas.getContext('2d');
 
     if (ctx && videoRef.current) {
-      // Apply mirroring transformation to the canvas context
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
 
@@ -126,14 +119,12 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
       dropZone.removeEventListener('dragleave', handleDragLeave);
       dropZone.removeEventListener('drop', handleDrop);
 
-      // Clean up camera stream when component unmounts
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
   }, [onImageSelected, stream]);
 
-  // Hidden file input, independent of other UI
   const fileInput = (
     <input
       type="file"
@@ -144,7 +135,6 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
     />
   );
 
-  // Camera View
   if (showCamera) {
     return (
       <div className="relative">
@@ -157,26 +147,24 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
         />
         <div className="mt-4 flex justify-center gap-4">
           <Button onClick={handleTakePhoto} className="bg-primary rounded px-4 py-2 text-white">
-            Take Photo
+            拍照
           </Button>
           <Button
             variant="outline"
             onClick={stopCamera}
             className="rounded bg-gray-500 px-4 py-2 text-white"
           >
-            Cancel
+            取消
           </Button>
         </div>
       </div>
     );
   }
 
-  // Drop Zone View (when camera is not active)
   return (
     <>
       {fileInput}
       <div className="flex flex-col gap-4">
-        {/* Camera trigger area */}
         <div
           ref={dropZoneRef}
           onClick={handleCameraCapture}
@@ -202,38 +190,12 @@ export function ImagePicker({ onImageSelected }: ImagePickerProps) {
               d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <p className="mt-2 text-sm text-gray-500">Take a selfie</p>
-          <p className="mt-1 text-xs text-gray-500">or drop an image file here</p>
+          <p className="mt-2 text-sm text-gray-500">点击拍照</p>
+          <p className="mt-1 text-xs text-gray-500">或拖拽图片到此处</p>
         </div>
 
-        {/* <div className="text-center">
-          <Button
-            type="button"
-            variant="link"
-            onClick={handleFileSelection}
-            className="text-primary h-auto p-0 text-sm hover:underline"
-          >
-            or select from device
-          </Button>
-        </div> */}
-
         <div className="flex flex-col gap-2">
-          <p className="text-center text-sm font-normal text-[#666E7A]">Or, choose from below</p>
-          <div className="flex items-center justify-center gap-2">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <button
-                key={`preset-${index}`}
-                onClick={() => handleSelectPreset(`/images/examples/${index + 1}.jpeg`, index)}
-                className="h-18 w-18 cursor-pointer rounded-xl"
-              >
-                <img
-                  src={`/images/examples/${index + 1}.jpeg`}
-                  alt=""
-                  className="h-full w-full rounded-xl object-cover"
-                />
-              </button>
-            ))}
-          </div>
+          <div className="flex items-center justify-center gap-2"></div>
         </div>
       </div>
     </>

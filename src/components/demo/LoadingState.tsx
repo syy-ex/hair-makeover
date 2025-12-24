@@ -9,11 +9,11 @@ type LoadingStateProps = {
 };
 
 const copy = {
-  [Status.IDLE]: 'Loading...',
-  [Status.PENDING]: 'Adding your image to the queue...',
-  [Status.RUNNING]: 'Processing your image...',
-  [Status.SUCCEEDED]: 'Image generated!',
-  [Status.FAILED]: 'Failed to generate image',
+  [Status.IDLE]: '加载中...',
+  [Status.PENDING]: '正在火速生成，大约需要十几秒...',
+  [Status.RUNNING]: '正在处理你的图片...',
+  [Status.SUCCEEDED]: '图片生成完成！',
+  [Status.FAILED]: '生成失败',
 };
 
 export function LoadingState({ onCancel }: LoadingStateProps) {
@@ -30,7 +30,7 @@ export function LoadingState({ onCancel }: LoadingStateProps) {
       <p className="mt-4 text-lg">{copy[status]}</p>
 
       <Button onClick={handleCancel} variant="outline" className="mt-4">
-        Cancel
+        取消
       </Button>
     </div>
   );

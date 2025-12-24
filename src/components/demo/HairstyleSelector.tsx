@@ -27,7 +27,7 @@ export function HairstyleSelector({ onSelect }: HairstyleSelectorProps) {
     <div
       className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4"
       role="radiogroup"
-      aria-label="Hairstyle options"
+      aria-label="发型选项"
     >
       {hairstyles.map(hairstyle => (
         <button
@@ -46,13 +46,13 @@ export function HairstyleSelector({ onSelect }: HairstyleSelectorProps) {
         >
           <img
             src={hairstyle.src}
-            alt={`Hairstyle ${hairstyle.id}`}
+            alt={`发型 ${hairstyle.id}`}
             className="h-full w-full object-cover"
           />
           <span className="sr-only">
             {selectedHairstyle === hairstyle.id
-              ? `Hairstyle ${hairstyle.id} selected`
-              : `Select hairstyle ${hairstyle.id}`}
+              ? `已选择发型 ${hairstyle.id}`
+              : `选择发型 ${hairstyle.id}`}
           </span>
         </button>
       ))}

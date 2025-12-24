@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-type Task = {
-  id: string;
+type GenerateResponse = {
+  id?: string;
+  output?: string[];
 };
 
 export enum Status {
@@ -19,6 +20,7 @@ export function useTextToImage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<string[]>([]);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Update isLoading whenever status changes
@@ -28,6 +30,7 @@ export function useTextToImage() {
 
   const generateImage = async (userImage: File, hairstyleImageUrl: string, prompt: string) => {
     setStatus(Status.PENDING);
+    setErrorMessage(null);
 
     try {
       // Create a new abort controller at the beginning
@@ -45,7 +48,7 @@ export function useTextToImage() {
       // Fetch hairstyle image and convert to base64
       const hairstyleImageResponse = await fetch(hairstyleImageUrl);
       if (!hairstyleImageResponse.ok) {
-        throw new Error('Failed to fetch hairstyle image');
+        throw new Error('获取发型图片失败');
       }
       const hairstyleImageBlob = await hairstyleImageResponse.blob();
       const hairstyleImageBase64 = await new Promise<string>((resolve, reject) => {
@@ -71,19 +74,39 @@ export function useTextToImage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         setStatus(Status.FAILED);
-        throw new Error(errorData.error || 'Failed to generate image');
+        const message =
+          errorData?.error?.message ||
+          errorData?.error ||
+          errorData?.message ||
+          '生成图片失败';
+        setErrorMessage(message);
+        throw new Error(message);
       }
 
-      const task = (await response.json()) as Task;
-      setCurrentTaskId(task.id);
+      const data = (await response.json()) as GenerateResponse;
 
-      // Now use the same controller for polling
-      const results = await pollForCompletion(task.id, setStatus, controller.signal);
+      if (Array.isArray(data.output) && data.output.length > 0) {
+        setResults(data.output);
+        setStatus(Status.SUCCEEDED);
+        setCurrentTaskId(null);
+        return data.output;
+      }
 
-      setResults(results);
-      return results;
+      if (data.id) {
+        setCurrentTaskId(data.id);
+
+        // Now use the same controller for polling
+        const results = await pollForCompletion(data.id, setStatus, controller.signal);
+
+        setResults(results);
+        return results;
+      }
+
+      setStatus(Status.FAILED);
+      setErrorMessage('未返回生成结果');
+      throw new Error('未返回生成结果');
     } catch (error) {
       // Check if the error was due to an abort
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -92,6 +115,9 @@ export function useTextToImage() {
       } else {
         console.error('Error generating image:', error);
         setStatus(Status.FAILED);
+        if (error instanceof Error && !errorMessage) {
+          setErrorMessage(error.message);
+        }
       }
       return [];
     }
@@ -108,6 +134,7 @@ export function useTextToImage() {
     if (!currentTaskId) {
       // if no task id, we can abort the task creation
       cancelTaskCreation();
+      setErrorMessage(null);
       return;
     }
 
@@ -135,6 +162,7 @@ export function useTextToImage() {
         setStatus(Status.IDLE);
         setCurrentTaskId(null);
         setResults([]);
+        setErrorMessage(null);
         return true;
       }
 
@@ -152,6 +180,7 @@ export function useTextToImage() {
     setResults([]);
     setStatus(Status.IDLE);
     setCurrentTaskId(null);
+    setErrorMessage(null);
 
     // Abort any ongoing polling
     if (abortControllerRef.current) {
@@ -164,6 +193,7 @@ export function useTextToImage() {
     status,
     isLoading,
     results,
+    errorMessage,
     generateImage,
     cancelTask,
     resetResults,
@@ -195,7 +225,7 @@ async function pollForCompletion(
         return data.output;
       } else if (data.status === 'FAILED') {
         setStatus(Status.FAILED);
-        throw new Error(data.error || 'Task failed');
+        throw new Error(data.error || '任务失败');
       } else {
         // Task is still processing, wait before checking again
         setStatus(Status.RUNNING);

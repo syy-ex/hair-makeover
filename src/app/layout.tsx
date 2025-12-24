@@ -5,8 +5,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Runway Hair Makeover',
-  description: "Generate hair makeovers using Runway's API",
+  title: 'fashion 发型',
+  description: '使用 Nano-banana 生成发型效果并消耗积分',
 };
 
 export default function RootLayout({

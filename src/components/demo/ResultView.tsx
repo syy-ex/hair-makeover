@@ -13,7 +13,7 @@ export function ResultView({ results, onReset }: ResultViewProps) {
           <div key={`result-${index}`} className="relative">
             <img
               src={result}
-              alt="Processed result"
+              alt="生成结果"
               className="max-h-[500px] w-auto rounded-lg object-contain"
             />
           </div>
@@ -21,7 +21,7 @@ export function ResultView({ results, onReset }: ResultViewProps) {
       </div>
       <div className="flex justify-center gap-4">
         <Button variant="outline" onClick={onReset}>
-          Try a different hairstyle
+          换个发型再试
         </Button>
       </div>
     </div>

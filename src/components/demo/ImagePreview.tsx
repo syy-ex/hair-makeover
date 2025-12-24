@@ -10,13 +10,13 @@ export function ImagePreview({ imageUrl, onClear }: ImagePreviewProps) {
         <>
           <img
             src={imageUrl}
-            alt="Preview"
+            alt="预览图"
             className="max-h-full max-w-full rounded-lg object-contain"
           />
           <button
             onClick={onClear}
             className="bg-opacity-70 hover:bg-opacity-100 absolute -top-2 -right-2 cursor-pointer rounded-full bg-gray-800 p-1 text-white"
-            aria-label="Clear image"
+            aria-label="清除图片"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -45,7 +45,7 @@ export function ImagePreview({ imageUrl, onClear }: ImagePreviewProps) {
               d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <p className="mt-1">Image preview will appear here</p>
+          <p className="mt-1">图片预览会显示在这里</p>
         </div>
       )}
     </div>
