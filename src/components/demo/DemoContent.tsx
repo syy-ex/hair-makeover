@@ -9,7 +9,7 @@ import { useTextToImageContext } from '@/contexts/TextToImageContext';
 import { useAuth } from '@/hooks/useAuth';
 import type { RechargeOrder } from '@/hooks/useAuth';
 import { useImageUpload } from '@/hooks/useImageUpload';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Button } from '../ui/button';
 
 const hairstyles = [
@@ -53,13 +53,19 @@ const hairstyles = [
 
 const rechargeStatusLabels: Record<RechargeOrder['status'], string> = {
   pending: '待确认',
-  approved: '已确认',
+  approved: '已入账',
   rejected: '已拒绝',
+};
+
+const rechargeChannelLabels: Record<'wechat' | 'alipay', string> = {
+  wechat: '微信支付',
+  alipay: '支付宝',
 };
 
 export function DemoContent() {
   const { image, imagePreview, handleImageSelection, resetImage } = useImageUpload();
-  const { isLoading, results, generateImage, resetResults, errorMessage } = useTextToImageContext();
+  const { isLoading, results, generateImage, resetResults, errorMessage } =
+    useTextToImageContext();
   const {
     user,
     isLoading: authLoading,
@@ -82,12 +88,7 @@ export function DemoContent() {
   const [rechargeMessage, setRechargeMessage] = useState<string | null>(null);
   const [rechargeOrder, setRechargeOrder] = useState<RechargeOrder | null>(null);
   const [rechargeBusy, setRechargeBusy] = useState(false);
-  const [qrLoadError, setQrLoadError] = useState(false);
-  const wechatQrUrl = process.env.NEXT_PUBLIC_WECHAT_QR_URL || '';
-
-  useEffect(() => {
-    setQrLoadError(false);
-  }, [wechatQrUrl]);
+  const [rechargeChannel, setRechargeChannel] = useState<'wechat' | 'alipay'>('wechat');
 
   useEffect(() => {
     if (!user) {
@@ -170,9 +171,9 @@ export function DemoContent() {
     setRechargeMessage(null);
     try {
       setRechargeBusy(true);
-      const order = await recharge(amount);
+      const order = await recharge(amount, rechargeChannel);
       setRechargeOrder(order);
-      setRechargeMessage(`已生成充值订单，请扫码支付并等待人工确认。订单号：${order.id}`);
+      setRechargeMessage(`已生成充值订单，请完成支付，支付成功后积分会自动到账。订单号：${order.id}`);
     } catch (error) {
       setRechargeMessage(error instanceof Error ? error.message : '充值失败');
     } finally {
@@ -193,14 +194,16 @@ export function DemoContent() {
 
       if (latest.status === 'approved') {
         await refreshUser();
-        setRechargeMessage('充值已确认，积分已到账。');
+        setRechargeMessage('支付已确认，积分已到账。');
       } else if (latest.status === 'rejected') {
-        setRechargeMessage(latest.note ? `充值被拒绝：${latest.note}` : '充值被拒绝，请联系管理员。');
+        setRechargeMessage(
+          latest.note ? `支付被拒绝：${latest.note}` : '支付被拒绝，请联系管理员。'
+        );
       } else {
-        setRechargeMessage('充值待确认，请稍后刷新。');
+        setRechargeMessage('支付待确认，请稍后刷新。');
       }
     } catch (error) {
-      setRechargeMessage(error instanceof Error ? error.message : '查询充值状态失败');
+      setRechargeMessage(error instanceof Error ? error.message : '查询支付状态失败。');
     } finally {
       setRechargeBusy(false);
     }
@@ -208,28 +211,43 @@ export function DemoContent() {
 
   const canGenerate = Boolean(user) && image && selectedHairstyle !== -1;
   const insufficientPoints = user ? user.pointsBalance < 5 : false;
-  const qrFallbackText = wechatQrUrl
-    ? '二维码加载失败，请检查图片地址是否可访问'
-    : '请设置 NEXT_PUBLIC_WECHAT_QR_URL';
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="mx-auto flex flex-col items-center gap-2.5">
-        <h2 className="text-3xl font-normal text-[#0C0C0C] sm:text-4xl">我们不生产发型，我们制造自信</h2>
-        <p className="text-base font-normal text-[#7C7C7C] sm:text-lg">
-          在快节奏的都市生活中，本店是一个暂停键。我们摒弃了传统理发店的嘈杂与推销，只保留最纯粹的修剪技艺。我们的理发师不仅仅是工匠，更是面部美学的建筑师。
+    <div className="flex flex-col gap-8">
+      <div
+        className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center animate-[rise-in_0.6s_ease-out] [animation-fill-mode:both]"
+        style={{ animationDelay: '40ms' }}
+      >
+        <p className="text-xs uppercase tracking-[0.35em] text-[#9A9186]">
+          发型焕新工作室
+        </p>
+        <h2 className="text-3xl font-medium text-[#1A1A1A] sm:text-4xl">
+          我们不生产发型，我们制造自信
+        </h2>
+        <p className="text-base text-[#7C7C7C] sm:text-lg">
+          放慢脚步，尝试一个新造型，让每一次改变更接近你想要的自己。
         </p>
       </div>
 
-      <div className="flex flex-col rounded-lg border border-[#D0D4D4] bg-white">
-        <div className="flex flex-col gap-6 p-6">
-          <div className="flex items-center justify-between">
+      <div
+        className="relative overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[0_24px_60px_rgba(16,16,16,0.12)] animate-[fade-in-soft_0.8s_ease-out] [animation-fill-mode:both]"
+        style={{
+          '--panel-bg': '#FBF8F2',
+          '--panel-border': '#E7DFD3',
+          animationDelay: '120ms',
+        } as CSSProperties}
+      >
+        <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-[radial-gradient(circle,_#F6E7D3_0%,_rgba(246,231,211,0)_70%)]" />
+        <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-[radial-gradient(circle,_#DDE6DE_0%,_rgba(221,230,222,0)_70%)]" />
+
+        <div className="relative flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-medium text-[#0C0C0C]">账号</h3>
-              <p className="text-sm text-[#7C7C7C]">登录后可充值并使用积分。</p>
+              <h3 className="text-xl font-semibold text-[#1A1A1A]">账号</h3>
+              <p className="text-sm text-[#7C7C7C]">登录后可充值并生成。</p>
             </div>
             {user && (
-              <Button variant="outline" onClick={logout}>
+              <Button variant="outline" onClick={logout} className="rounded-full">
                 退出登录
               </Button>
             )}
@@ -238,42 +256,57 @@ export function DemoContent() {
           {authLoading ? (
             <p className="text-sm text-[#7C7C7C]">正在加载账号信息...</p>
           ) : user ? (
-            <div className="grid gap-6 md:grid-cols-[220px_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
               <div className="flex flex-col gap-3">
-                <div className="rounded-md border border-[#E4E5E6] bg-[#FAFAFA] p-4">
-                  <p className="text-xs uppercase text-[#7C7C7C]">已登录邮箱</p>
-                  <p className="text-sm font-medium text-[#0C0C0C]">{user.email}</p>
+                <div className="rounded-xl border border-[var(--panel-border)] bg-white/70 p-4 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.2em] text-[#9A9186]">
+                    已登录邮箱
+                  </p>
+                  <p className="mt-2 break-all text-sm font-medium text-[#1A1A1A]">
+                    {user.email}
+                  </p>
                 </div>
-                <div className="rounded-md border border-[#E4E5E6] bg-[#FAFAFA] p-4">
-                  <p className="text-xs uppercase text-[#7C7C7C]">积分余额</p>
-                  <p className="text-2xl font-semibold text-[#0C0C0C]">{user.pointsBalance}</p>
+                <div className="rounded-xl border border-[#111111] bg-[#111111] p-4 text-white shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/60">
+                    积分余额
+                  </p>
+                  <p className="mt-2 text-3xl font-semibold">{user.pointsBalance}</p>
+                  <p className="mt-1 text-xs text-white/60">每次生成消耗 5 积分</p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-3 rounded-md border border-[#E4E5E6] bg-[#FAFAFA] p-4">
-                  <p className="text-sm font-medium text-[#0C0C0C]">微信收款码</p>
-                  {wechatQrUrl && !qrLoadError ? (
-                    <img
-                      src={wechatQrUrl}
-                      alt="微信收款码"
-                      className="h-40 w-40 rounded-md border border-[#E4E5E6] object-contain"
-                      referrerPolicy="no-referrer"
-                      onError={() => setQrLoadError(true)}
-                    />
-                  ) : (
-                    <div className="flex h-40 w-40 items-center justify-center rounded-md border border-dashed border-[#D0D4D4] text-xs text-[#7C7C7C]">
-                      {qrFallbackText}
-                    </div>
-                  )}
-                  <p className="text-xs text-[#7C7C7C]">
-                    扫码付款后请等待人工确认到账。
-                  </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-3 rounded-xl border border-[var(--panel-border)] bg-white/70 p-4 backdrop-blur">
+                  <p className="text-sm font-medium text-[#1A1A1A]">支付方式</p>
+                  <p className="text-xs text-[#7C7C7C]">支持微信与支付宝。</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={rechargeChannel === 'wechat' ? 'default' : 'outline'}
+                      onClick={() => setRechargeChannel('wechat')}
+                      disabled={rechargeBusy}
+                      className="rounded-full"
+                    >
+                      微信支付
+                    </Button>
+                    <Button
+                      variant={rechargeChannel === 'alipay' ? 'default' : 'outline'}
+                      onClick={() => setRechargeChannel('alipay')}
+                      disabled={rechargeBusy}
+                      className="rounded-full"
+                    >
+                      支付宝
+                    </Button>
+                  </div>
+                  <div className="rounded-lg border border-dashed border-[#D7CFC3] bg-white/80 px-3 py-2 text-xs text-[#7C7C7C]">
+                    已选择：{rechargeChannelLabels[rechargeChannel]}
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3 rounded-md border border-[#E4E5E6] bg-[#FAFAFA] p-4">
-                  <p className="text-sm font-medium text-[#0C0C0C]">充值</p>
-                  <p className="text-xs text-[#7C7C7C]">每 1 元 = 10 积分，人工确认后到账。</p>
+                <div className="flex flex-col gap-3 rounded-xl border border-[var(--panel-border)] bg-white/70 p-4 backdrop-blur">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#1A1A1A]">充值金额</p>
+                    <span className="text-xs text-[#7C7C7C]">1 元 = 10 积分</span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {[1, 5, 10, 50].map(amount => (
                       <Button
@@ -281,26 +314,64 @@ export function DemoContent() {
                         variant="outline"
                         onClick={() => handleRecharge(amount)}
                         disabled={rechargeBusy}
+                        className="rounded-full"
                       >
                         {amount} 元
                       </Button>
                     ))}
                   </div>
+                  <p className="text-xs text-[#7C7C7C]">支付成功后积分自动到账。</p>
+
                   {rechargeOrder && (
-                    <div className="rounded-md border border-dashed border-[#D0D4D4] px-3 py-2 text-xs text-[#7C7C7C]">
-                      <p>订单号：{rechargeOrder.id}</p>
-                      <p>
-                        金额：{rechargeOrder.amount} 元 / 积分：{rechargeOrder.points}
-                      </p>
-                      <p>状态：{rechargeStatusLabels[rechargeOrder.status]}</p>
-                      <Button
-                        variant="outline"
-                        onClick={handleCheckRechargeStatus}
-                        disabled={rechargeBusy}
-                        className="mt-2"
-                      >
-                        {rechargeBusy ? '查询中...' : '刷新状态'}
-                      </Button>
+                    <div className="rounded-lg border border-dashed border-[#D7CFC3] bg-white/80 p-3 text-xs text-[#5F5A53]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] uppercase tracking-[0.2em] text-[#9A9186]">
+                        <span>订单详情</span>
+                        <span>{rechargeStatusLabels[rechargeOrder.status]}</span>
+                      </div>
+                      <div className="mt-2 grid gap-1">
+                        <p>订单号：{rechargeOrder.id}</p>
+                        <p>
+                          金额：{rechargeOrder.amount} 元 / 积分：{rechargeOrder.points}
+                        </p>
+                        <p>
+                          支付方式：
+                          {rechargeOrder.channel
+                            ? rechargeChannelLabels[rechargeOrder.channel]
+                            : rechargeChannelLabels[rechargeChannel]}
+                        </p>
+                        {rechargeOrder.providerTradeNo && (
+                          <p>平台单号：{rechargeOrder.providerTradeNo}</p>
+                        )}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {rechargeOrder.qrCodeUrl ? (
+                          <img
+                            src={rechargeOrder.qrCodeUrl}
+                            alt="支付二维码"
+                            className="h-28 w-28 rounded-md border border-[#E4E5E6] object-contain"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : rechargeOrder.payUrl ? (
+                          <a
+                            href={rechargeOrder.payUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-full border border-[#D0D4D4] px-4 py-2 text-xs text-[#1A1A1A]"
+                          >
+                            打开支付链接
+                          </a>
+                        ) : (
+                          <p>支付信息生成中...</p>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={handleCheckRechargeStatus}
+                          disabled={rechargeBusy}
+                          className="rounded-full"
+                        >
+                          {rechargeBusy ? '查询中...' : '刷新状态'}
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {rechargeMessage && (
@@ -310,17 +381,19 @@ export function DemoContent() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-[var(--panel-border)] bg-white/70 p-5 backdrop-blur">
               <div className="flex gap-2">
                 <Button
                   variant={authMode === 'login' ? 'default' : 'outline'}
                   onClick={() => setAuthMode('login')}
+                  className="rounded-full"
                 >
                   登录
                 </Button>
                 <Button
                   variant={authMode === 'register' ? 'default' : 'outline'}
                   onClick={() => setAuthMode('register')}
+                  className="rounded-full"
                 >
                   注册
                 </Button>
@@ -328,7 +401,7 @@ export function DemoContent() {
 
               <form
                 onSubmit={authMode === 'login' ? handleLogin : handleRegister}
-                className="flex flex-col gap-3"
+                className="mt-4 flex flex-col gap-3"
               >
                 <input
                   type="email"
@@ -351,6 +424,7 @@ export function DemoContent() {
                       variant="outline"
                       onClick={handleRequestCode}
                       disabled={authBusy}
+                      className="rounded-full"
                     >
                       发送验证码
                     </Button>
@@ -363,20 +437,20 @@ export function DemoContent() {
                   onChange={event => setPassword(event.target.value)}
                   className="rounded-md border border-[#D0D4D4] px-3 py-2 text-sm outline-none focus:border-black"
                 />
-                <Button type="submit" disabled={authBusy}>
+                <Button type="submit" disabled={authBusy} className="rounded-full">
                   {authMode === 'login' ? '登录' : '创建账号'}
                 </Button>
               </form>
 
               {(authMessage || authError) && (
-                <p className="text-xs text-[#7C7C7C]">{authMessage || authError}</p>
+                <p className="mt-3 text-xs text-[#7C7C7C]">{authMessage || authError}</p>
               )}
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col rounded-lg border border-[#D0D4D4] bg-white">
+      <div className="flex flex-col rounded-2xl border border-[#D0D4D4] bg-white shadow-[0_18px_40px_rgba(15,15,15,0.06)] animate-[rise-in_0.7s_ease-out] [animation-fill-mode:both] [animation-delay:200ms]">
         {isLoading ? (
           <LoadingState onCancel={() => handleReset()} />
         ) : (
@@ -387,7 +461,7 @@ export function DemoContent() {
               <>
                 <div className="flex h-full flex-col items-center justify-between py-8 md:flex-row">
                   <div className="mb-8 flex w-full flex-1 flex-col gap-4 px-6 md:mb-0 md:w-auto md:px-12">
-                    <p className="text-center text-xs font-medium text-[#0C0C0C] uppercase">
+                    <p className="text-center text-xs font-medium uppercase tracking-[0.3em] text-[#0C0C0C]">
                       添加自拍
                     </p>
                     {imagePreview ? (
@@ -397,7 +471,7 @@ export function DemoContent() {
                     )}
                   </div>
                   <div className="flex w-full flex-1 flex-col gap-4 border-[#E4E5E6] px-6 md:w-auto md:border-l md:px-12">
-                    <p className="text-center text-xs font-medium text-[#0C0C0C] uppercase">
+                    <p className="text-center text-xs font-medium uppercase tracking-[0.3em] text-[#0C0C0C]">
                       选择发型
                     </p>
                     <HairstyleSelector onSelect={setSelectedHairstyle} />
@@ -407,7 +481,7 @@ export function DemoContent() {
                 <div className="flex flex-wrap justify-end border-t border-[#E4E5E6] px-4 py-4 sm:px-8">
                   {!user && (
                     <p className="mr-4 self-center text-xs text-[#7C7C7C]">
-                      请先登录再生成图片。
+                      请先登录再生成。
                     </p>
                   )}
                   {insufficientPoints && (
@@ -418,7 +492,7 @@ export function DemoContent() {
                   <Button
                     onClick={handleSubmit}
                     disabled={!canGenerate || insufficientPoints}
-                    className="w-full sm:w-auto"
+                    className="w-full rounded-full sm:w-auto"
                   >
                     生成
                   </Button>

@@ -32,6 +32,11 @@ export async function GET(
       createdAt: order.createdAt,
       reviewedAt: order.reviewedAt,
       note: order.note,
+      provider: order.provider,
+      channel: order.channel,
+      providerTradeNo: order.providerTradeNo,
+      payUrl: order.payUrl,
+      qrCodeUrl: order.qrCodeUrl,
     },
   });
 }

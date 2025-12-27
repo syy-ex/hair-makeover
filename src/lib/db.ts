@@ -34,6 +34,9 @@ type PointsLedger = {
 
 type RechargeOrderStatus = 'pending' | 'approved' | 'rejected';
 
+type PaymentProvider = 'epay';
+type PaymentChannel = 'wechat' | 'alipay';
+
 type RechargeOrder = {
   id: string;
   userId: string;
@@ -43,6 +46,11 @@ type RechargeOrder = {
   createdAt: string;
   reviewedAt?: string;
   note?: string;
+  provider?: PaymentProvider;
+  channel?: PaymentChannel;
+  providerTradeNo?: string;
+  payUrl?: string;
+  qrCodeUrl?: string;
 };
 
 type Database = {
@@ -319,7 +327,8 @@ export async function debitPoints(
 
 export async function createRechargeOrder(
   userId: string,
-  amount: number
+  amount: number,
+  options?: { provider?: PaymentProvider; channel?: PaymentChannel }
 ): Promise<RechargeOrder> {
   return withDbLock(async db => {
     const user = db.users.find(item => item.id === userId);
@@ -334,9 +343,47 @@ export async function createRechargeOrder(
       points: amount * 10,
       status: 'pending',
       createdAt: nowIso(),
+      provider: options?.provider,
+      channel: options?.channel,
     };
 
     db.rechargeOrders.push(order);
+    return order;
+  });
+}
+
+export async function updateRechargeOrderPayment(
+  orderId: string,
+  update: {
+    provider?: PaymentProvider;
+    channel?: PaymentChannel;
+    providerTradeNo?: string;
+    payUrl?: string;
+    qrCodeUrl?: string;
+  }
+): Promise<RechargeOrder | null> {
+  return withDbLock(async db => {
+    const order = db.rechargeOrders.find(item => item.id === orderId);
+    if (!order) {
+      return null;
+    }
+
+    if (update.provider) {
+      order.provider = update.provider;
+    }
+    if (update.channel) {
+      order.channel = update.channel;
+    }
+    if (update.providerTradeNo) {
+      order.providerTradeNo = update.providerTradeNo;
+    }
+    if (update.payUrl) {
+      order.payUrl = update.payUrl;
+    }
+    if (update.qrCodeUrl) {
+      order.qrCodeUrl = update.qrCodeUrl;
+    }
+
     return order;
   });
 }

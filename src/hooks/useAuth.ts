@@ -17,6 +17,11 @@ export type RechargeOrder = {
   createdAt: string;
   reviewedAt?: string;
   note?: string;
+  provider?: string;
+  channel?: 'wechat' | 'alipay';
+  providerTradeNo?: string;
+  payUrl?: string;
+  qrCodeUrl?: string;
 };
 
 type AuthResponse = {
@@ -110,11 +115,11 @@ export function useAuth() {
     setError(null);
   }, []);
 
-  const recharge = useCallback(async (amount: number) => {
+  const recharge = useCallback(async (amount: number, channel: 'wechat' | 'alipay') => {
     const data = await fetchJson<RechargeResponse>('/api/recharge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({ amount, channel }),
     });
     setError(null);
     return data.order;

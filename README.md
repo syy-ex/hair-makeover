@@ -84,6 +84,34 @@ ADMIN_EMAILS=admin1@example.com,admin2@example.com
 
 Then log in with an admin account and open `/admin/recharge` to approve or reject orders.
 
+### Xiaowei Epay (Auto Credit)
+
+This project can auto-credit points after payment via Xiaowei Epay (易支付). Set the
+server-side environment variables below:
+
+```
+EPAY_BASE_URL=https://pay.lanfucai.com
+EPAY_PID=your_merchant_id
+EPAY_MD5_KEY=your_md5_key
+EPAY_ACT=pay
+EPAY_API_PATH=/api.php
+EPAY_SIGN_STYLE=plain
+EPAY_WECHAT_TYPE=wxpay
+EPAY_ALIPAY_TYPE=alipay
+PAYMENT_PUBLIC_BASE_URL=https://your-domain.com
+```
+
+Optional overrides:
+
+```
+EPAY_NOTIFY_URL=https://your-domain.com/api/recharge/notify
+EPAY_RETURN_URL=https://your-domain.com
+```
+
+Notes:
+- `PAYMENT_PUBLIC_BASE_URL` must be reachable by the payment platform for callback.
+- If your Epay doc requires `&key=` style MD5 signing, set `EPAY_SIGN_STYLE=key`.
+
 ### Authentication Flow
 
 1. Register with email -> request verification code.

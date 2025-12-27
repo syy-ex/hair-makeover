@@ -53,6 +53,11 @@ export async function GET(req: NextRequest) {
         createdAt: order.createdAt,
         reviewedAt: order.reviewedAt,
         note: order.note,
+        provider: order.provider,
+        channel: order.channel,
+        providerTradeNo: order.providerTradeNo,
+        payUrl: order.payUrl,
+        qrCodeUrl: order.qrCodeUrl,
       };
     })
   );
@@ -95,6 +100,11 @@ export async function POST(req: NextRequest) {
         createdAt: order.createdAt,
         reviewedAt: order.reviewedAt,
         note: order.note,
+        provider: order.provider,
+        channel: order.channel,
+        providerTradeNo: order.providerTradeNo,
+        payUrl: order.payUrl,
+        qrCodeUrl: order.qrCodeUrl,
       },
     });
   } catch (error) {

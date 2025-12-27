@@ -121,6 +121,12 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --font-family: 'Normal', sans-serif;
+  --page-background-image: url('/images/salon-bg.png');
+  --page-background-overlay: linear-gradient(
+    120deg,
+    rgba(250, 244, 236, 0.9),
+    rgba(242, 232, 218, 0.78)
+  );
 }
 
 @layer base {
@@ -129,10 +135,41 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: var(--page-background-overlay), var(--page-background-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
   }
 }
 
 ::selection {
   background-color: rgb(156 163 175 / var(--tw-bg-opacity));
   --tw-bg-opacity: 0.7;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-soft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
