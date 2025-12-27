@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body className="bg-[#EFEEE6]">
         <TextToImageProvider>
           <div className="flex min-h-screen flex-col">
